@@ -1,14 +1,12 @@
 package main
 
-import "fmt"
-
-
-const DB_HOST = "localhost"
-const DB_PORT = "3306"
-const DB_NAME = ""
-const DB_USER = ""
-const DB_PASS = ""
+//Customer structure
+type Customer struct {
+	ID      int     `json:"id"`
+	Balance float32 `json:"balance"`
+}
 
 func main() {
-	fmt.Println("Hello, world.")
+	openConnection()
+	initAPI()
 }
