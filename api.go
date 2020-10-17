@@ -41,6 +41,13 @@ func topupCustomerBalance(w http.ResponseWriter, r *http.Request) {
 	currentBalance := customer.Balance
 	newBalance := currentBalance + amount
 	customer.Balance = newBalance
+	status := updateCustomer(customer)
+
+	if !status {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "failed to update customer balance"}`))
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "success"}`))

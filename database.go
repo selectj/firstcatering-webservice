@@ -46,8 +46,17 @@ func getCustomer(custID int) Customer {
 
 	if err != nil {
 		customer.ID = -1
-		panic(err.Error())
 	}
 
 	return customer
+}
+
+func updateCustomer(customer Customer) bool {
+	toIns, err := db.Prepare("UPDATE customers SET balance=? WHERE id=?")
+	if err != nil {
+		return false
+	}
+
+	toIns.Exec(customer.Balance, customer.ID)
+	return true
 }
