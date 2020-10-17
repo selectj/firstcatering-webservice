@@ -7,18 +7,29 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-const DB_DRIVER = "mysql"
-const DB_HOST = "localhost"
-const DB_PORT = "3306"
-const DB_NAME = "firstcatering"
-const DB_USER = "firstcatering"
-const DB_PASS = "knL4nC2jNJ378vVT"
+//Database driver
+const dbDriver = "mysql"
+
+//Database host
+const dbHost = "localhost"
+
+//Database port
+const dbPort = "3306"
+
+//Database name
+const dbName = "firstcatering"
+
+//Database username
+const dbUser = "firstcatering"
+
+//Database user password
+const dbPass = "knL4nC2jNJ378vVT"
 
 var db *sql.DB
 
 func openConnection() {
-	connectionString := DB_USER + ":" + DB_PASS + "@tcp(" + DB_HOST + ":" + DB_PORT + ")/" + DB_NAME
-	con, err := sql.Open(DB_DRIVER, connectionString)
+	connectionString := dbUser + ":" + dbPass + "@tcp(" + dbHost + ":" + dbPort + ")/" + dbName
+	con, err := sql.Open(dbDriver, connectionString)
 
 	if err != nil {
 		panic(err.Error())
@@ -34,8 +45,19 @@ func getCustomer(custID int) Customer {
 	err := db.QueryRow("SELECT id, balance FROM customers WHERE id = ?", custID).Scan(&customer.ID, &customer.Balance)
 
 	if err != nil {
+		customer.ID = -1
 		panic(err.Error())
 	}
 
 	return customer
+}
+
+func setCustomerBalance(custID int, balance float32) bool {
+	customer := getCustomer(custID)
+	if customer.ID == -1 {
+		return false
+	}
+	customer.Balance = balance
+
+	return true
 }
