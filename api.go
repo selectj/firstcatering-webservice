@@ -101,7 +101,7 @@ func initAPI() {
 func defineEndpoints(r *mux.Router) {
 	r.HandleFunc("/customer/balance/{customerID}", getCustomerBalance).Methods(http.MethodGet)
 	r.HandleFunc("/customer/topup/{customerID}/{amount}", topupCustomerBalance).Methods(http.MethodPost)
-	r.HandleFunc("/customer/purchase/{customerID}/{cost}", topupCustomerBalance).Methods(http.MethodPost)
+	r.HandleFunc("/customer/purchase/{customerID}/{cost}", processPurchase).Methods(http.MethodPost)
 }
 
 func getCustomerFromRequestParams(w http.ResponseWriter, r *http.Request) Customer {
