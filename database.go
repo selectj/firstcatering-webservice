@@ -2,8 +2,9 @@ package main
 
 import (
 	"database/sql"
-	"log"
-	"strconv"
+	"fmt"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 const DB_DRIVER = "mysql"
@@ -16,20 +17,21 @@ const DB_PASS = "knL4nC2jNJ378vVT"
 var db *sql.DB
 
 func openConnection() {
-	db, err := sql.Open(DB_DRIVER, DB_USER+":"+DB_PASS+"@tcp("+DB_HOST+":"+DB_PORT+")/"+DB_NAME)
+	connectionString := DB_USER + ":" + DB_PASS + "@tcp(" + DB_HOST + ":" + DB_PORT + ")/" + DB_NAME
+	con, err := sql.Open(DB_DRIVER, connectionString)
 
 	if err != nil {
-		log.Panicln("Failed to create connection to database")
 		panic(err.Error())
 	}
 
-	log.Println("Successfully established database connection")
-	defer db.Close()
+	db = con
+	fmt.Println("Successfully established database connection")
+	// defer db.Close()
 }
 
 func getCustomer(custID int) Customer {
 	var customer Customer
-	err := db.QueryRow(("SELECT id, balance FROM customers WHERE id = "+strconv.Itoa(custID)), 2).Scan(&customer.ID, &customer.Balance)
+	err := db.QueryRow("SELECT id, balance FROM customers WHERE id = ?", custID).Scan(&customer.ID, &customer.Balance)
 
 	if err != nil {
 		panic(err.Error())
