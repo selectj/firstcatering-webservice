@@ -24,7 +24,7 @@ func getCustomerBalance(w http.ResponseWriter, r *http.Request) {
 }
 
 func topupCustomerBalance(w http.ResponseWriter, r *http.Request) {
-	amount := getAmountFromRequestParams(w, r)
+	amount := getFloatFromRequestParams(w, r, "amount")
 	customer := getCustomerFromRequestParams(w, r)
 	if customer.ID == -1 {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -53,6 +53,43 @@ func topupCustomerBalance(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message": "success"}`))
 }
 
+func processPurchase(w http.ResponseWriter, r *http.Request) {
+	customer := getCustomerFromRequestParams(w, r)
+	cost := getFloatFromRequestParams(w, r, "cost")
+
+	if customer.ID == -1 {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "Customer with customer ID not found"}`))
+		return
+	}
+
+	if cost <= 0.00 {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "Please enter a valid amount above 0"}`))
+		return
+	}
+
+	currentBalance := customer.Balance
+	newBalance := currentBalance - cost
+	if newBalance < 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "not enough balance"}`))
+		return
+	}
+
+	customer.Balance = newBalance
+	status := updateCustomer(customer)
+
+	if !status {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "failed to update customer balance"}`))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "success"}`))
+}
+
 func initAPI() {
 	r := mux.NewRouter()
 	api := r.PathPrefix("/api/").Subrouter()
@@ -64,6 +101,7 @@ func initAPI() {
 func defineEndpoints(r *mux.Router) {
 	r.HandleFunc("/customer/balance/{customerID}", getCustomerBalance).Methods(http.MethodGet)
 	r.HandleFunc("/customer/topup/{customerID}/{amount}", topupCustomerBalance).Methods(http.MethodPost)
+	r.HandleFunc("/customer/purchase/{customerID}/{cost}", topupCustomerBalance).Methods(http.MethodPost)
 }
 
 func getCustomerFromRequestParams(w http.ResponseWriter, r *http.Request) Customer {
@@ -84,13 +122,13 @@ func getCustomerFromRequestParams(w http.ResponseWriter, r *http.Request) Custom
 	return customer
 }
 
-func getAmountFromRequestParams(w http.ResponseWriter, r *http.Request) float64 {
+func getFloatFromRequestParams(w http.ResponseWriter, r *http.Request, paramName string) float64 {
 	params := mux.Vars(r)
 	w.Header().Set("Content-Type", "application/json")
 
 	amount := 0.00
 	var err error
-	if value, ok := params["amount"]; ok {
+	if value, ok := params[paramName]; ok {
 		amount, err = strconv.ParseFloat(value, 32)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
