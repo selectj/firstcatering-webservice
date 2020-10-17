@@ -33,7 +33,7 @@ func topupCustomerBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if amount  <= 0.00 
+	if amount <= 0.00 {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"message": "Please enter a valid amount above 0"}`))
 		return
@@ -78,14 +78,14 @@ func getCustomerFromRequestParams(w http.ResponseWriter, r *http.Request) Custom
 	return customer
 }
 
-func getAmountFromRequestParams(w http.ResponseWriter, r *http.Request) float32 {
+func getAmountFromRequestParams(w http.ResponseWriter, r *http.Request) float64 {
 	params := mux.Vars(r)
 	w.Header().Set("Content-Type", "application/json")
 
 	amount := 0.00
 	var err error
 	if value, ok := params["amount"]; ok {
-		amount, err = value
+		amount, err = strconv.ParseFloat(value, 32)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(`{"message": "Please specify a valid amount"}`))
