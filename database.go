@@ -51,13 +51,3 @@ func getCustomer(custID int) Customer {
 
 	return customer
 }
-
-func setCustomerBalance(custID int, balance float64) bool {
-	customer := getCustomer(custID)
-	if customer.ID == -1 {
-		return false
-	}
-	customer.Balance = balance
-
-	return true
-}

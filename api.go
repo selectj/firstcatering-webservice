@@ -24,9 +24,8 @@ func getCustomerBalance(w http.ResponseWriter, r *http.Request) {
 }
 
 func topupCustomerBalance(w http.ResponseWriter, r *http.Request) {
-	customer := getCustomerFromRequestParams(w, r)
 	amount := getAmountFromRequestParams(w, r)
-
+	customer := getCustomerFromRequestParams(w, r)
 	if customer.ID == -1 {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"message": "Customer with customer ID not found"}`))
@@ -41,7 +40,7 @@ func topupCustomerBalance(w http.ResponseWriter, r *http.Request) {
 
 	currentBalance := customer.Balance
 	newBalance := currentBalance + amount
-	setCustomerBalance(customer.ID, newBalance)
+	customer.Balance = newBalance
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "success"}`))
