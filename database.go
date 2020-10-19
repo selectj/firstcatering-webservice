@@ -53,7 +53,7 @@ func getCustomer(custID int) Customer {
 
 func getCard(cardID string) DataCard {
 	var card DataCard
-	err := db.QueryRow("SELECT id, pin, balance, customerID FROM card WHERE id = ?", cardID).Scan(&card.ID, &card.PIN, &card.Balance, &card.CustomerID)
+	err := db.QueryRow("SELECT id, pin, balance, customerID FROM cards WHERE id = ?", cardID).Scan(&card.ID, &card.PIN, &card.Balance, &card.CustomerID)
 
 	if err != nil {
 		card.ID = "-1"
