@@ -140,9 +140,9 @@ func initAPI() {
 
 func defineEndpoints(r *mux.Router) {
 	r.HandleFunc("/cards/balance/{cardID}/{pin}", getCardBalance).Methods(http.MethodGet)
-	r.HandleFunc("/cards/topup/{cardID}/{amount}", topupCardBalance).Methods(http.MethodPost)
-	r.HandleFunc("/cards/purchase/{cardID}/{cost}", processPurchase).Methods(http.MethodPost)
-	r.HandleFunc("/customers/register/{customer}", registerCustomer).Methods(http.MethodPut)
+	r.HandleFunc("/cards/topup/{cardID}/{pin}/{amount}", topupCardBalance).Methods(http.MethodPost)
+	r.HandleFunc("/cards/purchase/{cardID}/{pin}/{cost}", processPurchase).Methods(http.MethodPost)
+	r.HandleFunc("/customers/register/{pin}/{customer}", registerCustomer).Methods(http.MethodPut)
 }
 
 func getCardFromRequestParams(w http.ResponseWriter, r *http.Request) DataCard {
