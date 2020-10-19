@@ -42,7 +42,7 @@ func openConnection() {
 
 func getCustomer(custID int) Customer {
 	var customer Customer
-	err := db.QueryRow("SELECT id, balance FROM customers WHERE id = ?", custID).Scan(&customer.ID, &customer.Balance)
+	err := db.QueryRow("SELECT id, name, email, telephone FROM customers WHERE id = ?", custID).Scan(&customer.ID, &customer.Name, &customer.Email, &customer.Telephone)
 
 	if err != nil {
 		customer.ID = -1
@@ -51,12 +51,41 @@ func getCustomer(custID int) Customer {
 	return customer
 }
 
-func updateCustomer(customer Customer) bool {
-	toIns, err := db.Prepare("UPDATE customers SET balance=? WHERE id=?")
+func getCard(cardID string) DataCard {
+	var card DataCard
+	err := db.QueryRow("SELECT id, pin, balance, customerID FROM card WHERE id = ?", cardID).Scan(&card.ID, &card.PIN, &card.Balance, &card.CustomerID)
+
+	if err != nil {
+		card.ID = "-1"
+	}
+
+	return card
+}
+
+func newCustomer(customer NewCustomer) bool {
+	toIns, err := db.Prepare("INSERT INTO customers(id, name, email, telephone) VALUES(?, ? , ?, ?)")
 	if err != nil {
 		return false
 	}
 
-	toIns.Exec(customer.Balance, customer.ID)
+	toIns.Exec(customer.ID, customer.Name, customer.Email, customer.Telephone)
+
+	toIns, err = db.Prepare("INSERT INTO cards(id, pin, balance, customerID) VALUES(?, ? , ?, ?)")
+	if err != nil {
+		return false
+	}
+
+	newID := randomString(16)
+	toIns.Exec(newID, customer.PIN, 0, customer.ID)
+	return true
+}
+
+func updateCard(card DataCard) bool {
+	toIns, err := db.Prepare("UPDATE cards SET balance=? WHERE id=?")
+	if err != nil {
+		return false
+	}
+
+	toIns.Exec(card.Balance, card.ID)
 	return true
 }

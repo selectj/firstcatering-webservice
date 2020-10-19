@@ -10,25 +10,37 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func getCustomerBalance(w http.ResponseWriter, r *http.Request) {
-	customer := getCustomerFromRequestParams(w, r)
+func getCardBalance(w http.ResponseWriter, r *http.Request) {
+	card := getCardFromRequestParams(w, r)
 
-	if customer.ID == -1 {
+	if card.ID == "-1" {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Customer with customer ID not found"}`))
+		w.Write([]byte(`{"message": "Card is not registered. Please register card.}`))
+		return
+	}
+
+	if !validatePinFromRequestParams(w, r, card.PIN) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "incorrect PIN"}`))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(customer)
+	json.NewEncoder(w).Encode(card)
 }
 
-func topupCustomerBalance(w http.ResponseWriter, r *http.Request) {
+func topupCardBalance(w http.ResponseWriter, r *http.Request) {
 	amount := getFloatFromRequestParams(w, r, "amount")
-	customer := getCustomerFromRequestParams(w, r)
-	if customer.ID == -1 {
+	card := getCardFromRequestParams(w, r)
+	if card.ID == "-1" {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Customer with customer ID not found"}`))
+		w.Write([]byte(`{"message": "Card is not registered. Please register card.}`))
+		return
+	}
+
+	if !validatePinFromRequestParams(w, r, card.PIN) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "incorrect PIN"}`))
 		return
 	}
 
@@ -38,28 +50,34 @@ func topupCustomerBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentBalance := customer.Balance
+	currentBalance := card.Balance
 	newBalance := currentBalance + amount
-	customer.Balance = newBalance
-	status := updateCustomer(customer)
+	card.Balance = newBalance
+	status := updateCard(card)
 
 	if !status {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "failed to update customer balance"}`))
+		w.Write([]byte(`{"message": "failed to update card balance"}`))
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusAccepted)
 	w.Write([]byte(`{"message": "success"}`))
 }
 
 func processPurchase(w http.ResponseWriter, r *http.Request) {
-	customer := getCustomerFromRequestParams(w, r)
+	card := getCardFromRequestParams(w, r)
 	cost := getFloatFromRequestParams(w, r, "cost")
 
-	if customer.ID == -1 {
+	if card.ID == "-1" {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Customer with customer ID not found"}`))
+		w.Write([]byte(`{"message": "Card is not registered. Please register card.}`))
+		return
+	}
+
+	if !validatePinFromRequestParams(w, r, card.PIN) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "incorrect PIN"}`))
 		return
 	}
 
@@ -69,7 +87,7 @@ func processPurchase(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentBalance := customer.Balance
+	currentBalance := card.Balance
 	newBalance := currentBalance - cost
 	if newBalance < 0 {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -77,16 +95,38 @@ func processPurchase(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	customer.Balance = newBalance
-	status := updateCustomer(customer)
+	card.Balance = newBalance
+	status := updateCard(card)
 
 	if !status {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "failed to update customer balance"}`))
+		w.Write([]byte(`{"message": "failed to update card balance"}`))
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte(`{"message": "success"}`))
+}
+
+func registerCustomer(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	var customer NewCustomer
+	err := decoder.Decode(&customer)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "bad request"}`))
+		return
+	}
+
+	status := newCustomer(customer)
+
+	if !status {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "could not create customer"}`))
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
 	w.Write([]byte(`{"message": "success"}`))
 }
 
@@ -99,27 +139,33 @@ func initAPI() {
 }
 
 func defineEndpoints(r *mux.Router) {
-	r.HandleFunc("/customer/balance/{customerID}", getCustomerBalance).Methods(http.MethodGet)
-	r.HandleFunc("/customer/topup/{customerID}/{amount}", topupCustomerBalance).Methods(http.MethodPost)
-	r.HandleFunc("/customer/purchase/{customerID}/{cost}", processPurchase).Methods(http.MethodPost)
+	r.HandleFunc("/cards/balance/{cardID}/{pin}", getCardBalance).Methods(http.MethodGet)
+	r.HandleFunc("/cards/topup/{cardID}/{amount}", topupCardBalance).Methods(http.MethodPost)
+	r.HandleFunc("/cards/purchase/{cardID}/{cost}", processPurchase).Methods(http.MethodPost)
+	r.HandleFunc("/customers/register/{customer}", registerCustomer).Methods(http.MethodPut)
 }
 
-func getCustomerFromRequestParams(w http.ResponseWriter, r *http.Request) Customer {
+func getCardFromRequestParams(w http.ResponseWriter, r *http.Request) DataCard {
 	params := mux.Vars(r)
 	w.Header().Set("Content-Type", "application/json")
 
-	custID := -1
-	var err error
-	if value, ok := params["customerID"]; ok {
-		custID, err = strconv.Atoi(value)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"message": "Please specify a valid customer ID"}`))
-		}
+	cardID := ""
+	if value, ok := params["cardID"]; ok {
+		cardID = value
 	}
-	customer := getCustomer(custID)
+	card := getCard(cardID)
+	return card
+}
 
-	return customer
+func validatePinFromRequestParams(w http.ResponseWriter, r *http.Request, cardPIN string) bool {
+	params := mux.Vars(r)
+	w.Header().Set("Content-Type", "application/json")
+
+	pin := ""
+	if value, ok := params["pin"]; ok {
+		pin = value
+	}
+	return pin != "" && pin == cardPIN
 }
 
 func getFloatFromRequestParams(w http.ResponseWriter, r *http.Request, paramName string) float64 {
