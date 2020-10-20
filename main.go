@@ -1,5 +1,8 @@
 package main
 
+//Session variables
+var sessionCard DataCard
+
 //Customer structure (already registered customer data model)
 type Customer struct {
 	ID        int    `json:"id"`
@@ -25,7 +28,12 @@ type DataCard struct {
 	CustomerID int     `json:"cusomerId"`
 }
 
+func (dc DataCard) getCardOwner() Customer {
+	return getCustomer(dc.CustomerID)
+}
+
 func main() {
 	openConnection()
 	initAPI()
+	sessionCard.ID = "-1"
 }

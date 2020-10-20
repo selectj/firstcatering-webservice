@@ -10,12 +10,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func getCardBalance(w http.ResponseWriter, r *http.Request) {
+func startCardSession(w http.ResponseWriter, r *http.Request) {
 	card := getCardFromRequestParams(w, r)
 
 	if card.ID == "-1" {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Card is not registered. Please register card.}`))
+		w.Write([]byte(`{"message": "Card is not registered. Please register card."}`))
 		return
 	}
 
@@ -24,23 +24,40 @@ func getCardBalance(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"message": "incorrect PIN"}`))
 		return
 	}
+	sessionCard = card
+	customer := card.getCardOwner()
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(card)
+	w.Write([]byte(`{"message": "Welcome ` + customer.Name + `!"}`))
+}
+
+func endCardSession(w http.ResponseWriter, r *http.Request) {
+	if sessionCard.ID == "-1" {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "Card is not registered. Please register card."}`))
+		return
+	}
+	sessionCard.ID = "-1"
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "Goodbye!"}`))
+}
+
+func getCardBalance(w http.ResponseWriter, r *http.Request) {
+	if sessionCard.ID == "-1" {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "There is no active session"}`))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(sessionCard)
 }
 
 func topupCardBalance(w http.ResponseWriter, r *http.Request) {
 	amount := getFloatFromRequestParams(w, r, "amount")
-	card := getCardFromRequestParams(w, r)
-	if card.ID == "-1" {
+	if sessionCard.ID == "-1" {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Card is not registered. Please register card.}`))
-		return
-	}
-
-	if !validatePinFromRequestParams(w, r, card.PIN) {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "incorrect PIN"}`))
+		w.Write([]byte(`{"message": "There is no active session"}`))
 		return
 	}
 
@@ -50,10 +67,10 @@ func topupCardBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentBalance := card.Balance
+	currentBalance := sessionCard.Balance
 	newBalance := currentBalance + amount
-	card.Balance = newBalance
-	status := updateCard(card)
+	sessionCard.Balance = newBalance
+	status := saveCard(sessionCard)
 
 	if !status {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -66,18 +83,11 @@ func topupCardBalance(w http.ResponseWriter, r *http.Request) {
 }
 
 func processPurchase(w http.ResponseWriter, r *http.Request) {
-	card := getCardFromRequestParams(w, r)
 	cost := getFloatFromRequestParams(w, r, "cost")
 
-	if card.ID == "-1" {
+	if sessionCard.ID == "-1" {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Card is not registered. Please register card.}`))
-		return
-	}
-
-	if !validatePinFromRequestParams(w, r, card.PIN) {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "incorrect PIN"}`))
+		w.Write([]byte(`{"message": "Card is not registered. Please register card."}`))
 		return
 	}
 
@@ -87,7 +97,7 @@ func processPurchase(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentBalance := card.Balance
+	currentBalance := sessionCard.Balance
 	newBalance := currentBalance - cost
 	if newBalance < 0 {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -95,8 +105,8 @@ func processPurchase(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	card.Balance = newBalance
-	status := updateCard(card)
+	sessionCard.Balance = newBalance
+	status := saveCard(sessionCard)
 
 	if !status {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -139,10 +149,12 @@ func initAPI() {
 }
 
 func defineEndpoints(r *mux.Router) {
-	r.HandleFunc("/cards/balance/{cardID}/{pin}", getCardBalance).Methods(http.MethodGet)
-	r.HandleFunc("/cards/topup/{cardID}/{pin}/{amount}", topupCardBalance).Methods(http.MethodPost)
-	r.HandleFunc("/cards/purchase/{cardID}/{pin}/{cost}", processPurchase).Methods(http.MethodPost)
-	r.HandleFunc("/customers/register/{pin}/{customer}", registerCustomer).Methods(http.MethodPut)
+	r.HandleFunc("/login/{cardID}/{pin}", startCardSession).Methods(http.MethodPost)
+	r.HandleFunc("/logout", endCardSession).Methods(http.MethodPost)
+	r.HandleFunc("/cards/balance", getCardBalance).Methods(http.MethodGet)
+	r.HandleFunc("/cards/topup/{amount}", topupCardBalance).Methods(http.MethodPost)
+	r.HandleFunc("/cards/purchase/{cost}", processPurchase).Methods(http.MethodPost)
+	r.HandleFunc("/customers/register", registerCustomer).Methods(http.MethodPut)
 }
 
 func getCardFromRequestParams(w http.ResponseWriter, r *http.Request) DataCard {

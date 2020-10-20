@@ -80,7 +80,7 @@ func newCustomer(customer NewCustomer) bool {
 	return true
 }
 
-func updateCard(card DataCard) bool {
+func saveCard(card DataCard) bool {
 	toIns, err := db.Prepare("UPDATE cards SET balance=? WHERE id=?")
 	if err != nil {
 		return false
