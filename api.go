@@ -92,7 +92,7 @@ func topupCardBalance(w http.ResponseWriter, r *http.Request) {
 	currentBalance := sessionCard.Balance
 	newBalance := currentBalance + amount
 	sessionCard.Balance = newBalance
-	status := saveCard(sessionCard)
+	status := sessionCard.save()
 
 	if !status {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -129,7 +129,7 @@ func processPurchase(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionCard.Balance = newBalance
-	status := saveCard(sessionCard)
+	status := sessionCard.save()
 
 	if !status {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -175,9 +175,9 @@ func defineEndpoints(r *mux.Router) {
 	r.HandleFunc("/login/{cardID}/{pin}", startCardSession).Methods(http.MethodPost)
 	r.HandleFunc("/logout/{cardID}", endCardSession).Methods(http.MethodPost)
 	r.HandleFunc("/cards/balance/{cardID}", getCardBalance).Methods(http.MethodGet)
-	r.HandleFunc("/cards/topup//{cardID}/{amount}", topupCardBalance).Methods(http.MethodPost)
+	r.HandleFunc("/cards/topup/{cardID}/{amount}", topupCardBalance).Methods(http.MethodPost)
 	r.HandleFunc("/cards/purchase/{cardID}/{cost}", processPurchase).Methods(http.MethodPost)
-	r.HandleFunc("/customers/register", registerCustomer).Methods(http.MethodPut)
+	r.HandleFunc("/register", registerCustomer).Methods(http.MethodPut)
 }
 
 func getCardFromRequestParams(w http.ResponseWriter, r *http.Request) DataCard {
