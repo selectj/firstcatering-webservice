@@ -38,7 +38,7 @@ func doesSessionExist(sid string) bool {
 	return false
 }
 
-func getCurrentCardSession(cardID string) Session {
+func getCurrentCardSession(cardID string) *Session {
 	var currentSession Session
 	for _, session := range sessions {
 		if session.Card.ID == cardID {
@@ -46,7 +46,7 @@ func getCurrentCardSession(cardID string) Session {
 		}
 	}
 
-	return currentSession
+	return &currentSession
 }
 
 func removeFromSlice(s []Session, i int) []Session {

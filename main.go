@@ -42,7 +42,7 @@ func (dc DataCard) getCardOwner() Customer {
 func (session Session) end() {
 	for i, s := range sessions {
 		if s.ID == session.ID {
-			removeFromSlice(sessions, i)
+			sessions = removeFromSlice(sessions, i)
 			return
 		}
 	}
