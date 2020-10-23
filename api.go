@@ -83,12 +83,6 @@ func topupCardBalance(w http.ResponseWriter, r *http.Request) {
 	}
 	sessionCard := getCurrentCardSession(paramCard.ID).Card
 
-	if amount <= 0.00 {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Please enter a valid amount above 0"}`))
-		return
-	}
-
 	currentBalance := sessionCard.Balance
 	newBalance := currentBalance + amount
 	sessionCard.Balance = newBalance
@@ -113,12 +107,6 @@ func processPurchase(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sessionCard := getCurrentCardSession(paramCard.ID).Card
-
-	if cost <= 0.00 {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Please enter a valid amount above 0"}`))
-		return
-	}
 
 	currentBalance := sessionCard.Balance
 	newBalance := currentBalance - cost
@@ -156,6 +144,12 @@ func registerCustomer(w http.ResponseWriter, r *http.Request) {
 	if !status {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"message": "could not create customer"}`))
+		return
+	}
+
+	if customer.ID == 0 || customer.Name == "" || customer.Email == "" || customer.Telephone == "" || customer.PIN == "" {
+		w.WriteHeader(http.StatusAccepted)
+		w.Write([]byte(`{"message": "bad payload"}`))
 		return
 	}
 
@@ -211,9 +205,9 @@ func getFloatFromRequestParams(w http.ResponseWriter, r *http.Request, paramName
 	var err error
 	if value, ok := params[paramName]; ok {
 		amount, err = strconv.ParseFloat(value, 32)
-		if err != nil {
+		if err != nil || amount <= 0.00 {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"message": "Please specify a valid amount"}`))
+			w.Write([]byte(`{"message": "Please enter a valid amount above 0"}`))
 		}
 	}
 	return amount
