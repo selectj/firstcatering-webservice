@@ -14,7 +14,7 @@ type Customer struct {
 //Session structure for storing card sessions
 type Session struct {
 	ID           string
-	Card         DataCard
+	Card         *DataCard
 	LastActivity int64
 }
 

@@ -30,7 +30,7 @@ func startCardSession(w http.ResponseWriter, r *http.Request) {
 	}
 	session := Session{
 		sid,
-		card,
+		&card,
 		getCurrentTimeMillis(),
 	}
 	sessions = append(sessions, session)
