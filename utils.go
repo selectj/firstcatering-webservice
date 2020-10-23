@@ -49,7 +49,7 @@ func getCurrentCardSession(cardID string) Session {
 	return currentSession
 }
 
-func removeFromSlice(slice []Session, i int) []Session {
-	slice[len(slice)-1], slice[i] = slice[i], slice[len(slice)-1]
-	return slice[:len(slice)-1]
+func removeFromSlice(s []Session, i int) []Session {
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
 }

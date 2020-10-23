@@ -25,7 +25,7 @@ func startCardSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sid := randomString(8)
-	for !doesSessionExist(sid) {
+	for doesSessionExist(sid) {
 		sid = randomString(8)
 	}
 	session := Session{
@@ -67,10 +67,10 @@ func getCardBalance(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"message": "There is no active session"}`))
 		return
 	}
-	sessionCard := getCurrentCardSession(paramCard.ID)
+	session := getCurrentCardSession(paramCard.ID)
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(sessionCard)
+	json.NewEncoder(w).Encode(session.Card)
 }
 
 func topupCardBalance(w http.ResponseWriter, r *http.Request) {
