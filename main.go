@@ -1,5 +1,8 @@
 package main
 
+//Session timeout duration in seconds
+const timeoutDuration = 300
+
 //Active sessions array
 var sessions []Session
 

@@ -37,7 +37,6 @@ func openConnection() {
 
 	db = con
 	fmt.Println("Successfully established database connection")
-	// defer db.Close()
 }
 
 func getCustomer(custID int) Customer {

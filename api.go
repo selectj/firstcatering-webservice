@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -35,6 +36,11 @@ func startCardSession(w http.ResponseWriter, r *http.Request) {
 	}
 	sessions = append(sessions, session)
 	customer := card.getCardOwner()
+
+	time.AfterFunc(timeoutDuration*time.Second, func() {
+		log.Printf("Session for customer with ID %d has timed out.\n", session.Card.CustomerID)
+		endCardSession(w, r)
+	})
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "Welcome ` + customer.Name + `!"}`))
@@ -69,8 +75,9 @@ func getCardBalance(w http.ResponseWriter, r *http.Request) {
 	}
 	session := getCurrentCardSession(paramCard.ID)
 
+	response := fmt.Sprintf(`{"balance": %.2f}`, session.Card.Balance)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(session.Card)
+	w.Write([]byte(response))
 }
 
 func topupCardBalance(w http.ResponseWriter, r *http.Request) {
