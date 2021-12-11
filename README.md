@@ -1,6 +1,29 @@
 # First Catering RESTful API
 L4 Software Developer Synoptic Project by **Joseph Metcalfe**
 
+## Project Requirements
+Your task is to create a RESTful web service for First Catering Ltd that will allow
+Bows Formula One employees to use their existing data cards in the kiosks to
+register and top up with money.
+
+- If the card is not registered on the system, the card owner will be required to provide
+basic employee information:
+    - unique employee ID;
+    - name;
+    - email,
+    - mobile number.
+- A four-digit pin number chosen by the employee should be used for further security.
+- The data used for providing the services must be held in a database.
+- When a card is presented to the system and the service finds that the card is already
+registered, the system will show a welcome message with the user’s name
+associated with the card.
+- If the user’s card is not registered, then the system will respond requesting that the
+card needs to be registered.
+- It is envisaged that when the user taps their card a second time the system informs
+the user and says “Goodbye”.
+- The application should timeout after a number of minutes of inactivity.
+- You only need to provide the REST API, which should conform to industry standards.
+
 ## How to Install & Run the Application
 To install & run my application you will need Go installed. Please see the following on how to install Go for your system: https://golang.org/doc/
 Please note these instructions are for Linux and may differ ever so slightly to a Windows installation. 
